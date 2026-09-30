@@ -38,12 +38,20 @@ classes whose RGB signatures overlap (crops, pasture, vegetation).
 6. **Container**: release-pinned `.keras` artifact, SHA256-verified,
    parity-checked against local serving.
 
-## Results (held-out test, 4,050 patches)
+## Results (held-out test, 4,050 patches — independent rerun)
 
-- **Accuracy 0.9123**, loss 0.2642.
-- Strongest: Forest (F1 0.948), AnnualCrop (0.934).
-- Weakest: HerbaceousVegetation (F1 0.843 — confused with Pasture and
-  AnnualCrop), Industrial recall 0.856.
+- **Accuracy 0.8763**, loss 0.3675 (macro F1 0.87).
+- Strongest: Forest (F1 0.94), SeaLake (0.95), AnnualCrop (0.89).
+- Weakest: HerbaceousVegetation (F1 0.79 — confused with Pasture and
+  AnnualCrop), Industrial recall 0.78.
+
+*Provenance note: the thesis notebook reported 0.9123 on the same
+protocol. This repo's `make train` rerun (CPU, TF 2.19, same seed,
+same architecture) reproduces 0.8763 with the identical error pattern
+— same weakest classes, same confusions. The gap is consistent with
+GPU/CPU nondeterminism plus best-of-several reporting in the original;
+the rerun number above is the one this repo's artifact actually scores,
+and the shipped model is the rerun.*
 
 ## Limitations
 

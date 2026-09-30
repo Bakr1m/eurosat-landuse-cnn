@@ -6,7 +6,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [1.0.0] - 2026-09-30
 
 ### Added
-- Custom 3-block CNN for 10-class EuroSAT LULC (test accuracy 0.9123),
+- Custom 3-block CNN for 10-class EuroSAT LULC (test accuracy 0.8763 on
+  the independent `make train` rerun; thesis reported 0.9123 — see README),
   refactored from the final-thesis notebook into `src/`:
   `data` (download + stratified 70/15/15 split), `preprocessing`
   (train augmentation isolated from eval rescale), `model` (4,296,138

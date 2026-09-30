@@ -21,11 +21,14 @@ mapping product.
 - ModelCheckpoint on `val_accuracy` + EarlyStopping on `val_loss`
   (patience 10, restore best).
 
-## Metrics (held-out test, 4,050 patches)
-- **Accuracy 0.9123**, loss 0.2642.
-- Strongest: Forest (F1 0.948), AnnualCrop (0.934). Weakest:
-  HerbaceousVegetation (F1 0.843 — confused with Pasture/AnnualCrop),
-  Industrial recall 0.856.
+## Metrics (held-out test, 4,050 patches — independent rerun)
+- **Accuracy 0.8763**, loss 0.3675, macro F1 0.87.
+- Strongest: SeaLake (F1 0.95), Forest (0.94), AnnualCrop (0.89).
+  Weakest: HerbaceousVegetation (F1 0.79 — confused with
+  Pasture/AnnualCrop), Industrial recall 0.78.
+- The thesis notebook reported 0.9123 on the same protocol; the rerun
+  scores 0.8763 with the identical error pattern (see README provenance
+  note). Shipped artifact = the rerun.
 
 ## Limitations
 - RGB only — multispectral bands unused; spectrally similar classes
