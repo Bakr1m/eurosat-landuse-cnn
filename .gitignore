@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data (27k patches, ~90 MB archive) — reproduce via scripts/download_data.sh
+data/
+*.zip
+
+# Model artifacts — production .keras ships via GitHub Release, not git
+models/
+*.keras
+*.h5
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/
+.ruff_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/

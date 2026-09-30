@@ -1,6 +1,88 @@
-The growing need for regular and extensive monitoring of the planet's surface is what drives the domain of Earth Observation (EO). Missions like the Copernicus Sentinel-2 generate vast volumes of data, making manual Land Use and Land Cover (LULC) mapping outdated.  
-The main intention is to harness artificial intelligence, particularly deep Convolutional Neural Networks (CNN), to automatically and accurately classify this geospatial information.  
+# EuroSAT Land-Use CNN
 
-The project addresses the challenge of building a strong classification system that can distinguish between LULC types which often have overlapping spectral signatures in RGB imagery. The main goal is to design, implement, and validate a custom CNN that achieves above 90% in accuracy.  
- 
-Used the three channel (Red, Green, Blue) component of the EuroSAT dataset, which includes 27,000 image patches, each measuring 64 × 64 pixels. The ten classes are: AnnualCrop, Forest, HerbaceousVegetation, Highway, Industrial, Pasture, PermanentCrop, Residential, River, SeaLake.  
+**Thesis project, productionized | Custom CNN: data → model → evaluation → API → Docker**
+
+## Business Context
+
+Earth Observation missions (Copernicus Sentinel-2) generate far more
+imagery than analysts can label by hand. This project automates Land Use
+/ Land Cover (LULC) mapping: a custom convolutional network classifies
+satellite patches into 10 land-use classes, with the hard cases being
+classes whose RGB signatures overlap (crops, pasture, vegetation).
+
+## Dataset
+
+- **Source**: EuroSAT RGB (Helber et al. 2019; Sentinel-2, CC BY-SA 4.0),
+  27,000 64×64 patches — reproduced via `scripts/download_data.sh`
+  (data/ is gitignored)
+- **Classes (10)**: AnnualCrop, Forest, HerbaceousVegetation, Highway,
+  Industrial, Pasture, PermanentCrop, Residential, River, SeaLake
+- **Split**: stratified 70/15/15 (train 18,900 / val 4,050 / test 4,050),
+  `random_state=42`
+- **Note**: RGB only — the 10 Sentinel-2 spectral bands are collapsed to
+  visual channels, which is exactly what makes similar classes confusable
+
+## Approach
+
+1. **Pipeline** (`src/data.py`, `src/preprocessing.py`): stratified split;
+   train-only augmentation (rotation 20°, shifts/shear/zoom 0.1, flip),
+   rescale-only eval — augmentation can never leak (tested).
+2. **Architecture** (`src/model.py`): custom 3-block CNN —
+   3× [Conv2D → BatchNorm → MaxPool → Dropout] → Dense(512) → softmax,
+   4,296,138 params. Adam(1e-3), categorical crossentropy.
+3. **Training** (`src/train.py`): up to 50 epochs, ModelCheckpoint on
+   `val_accuracy`, EarlyStopping on `val_loss` (patience 10, restore best).
+4. **Evaluation**: consolidated test report + confusion matrix.
+5. **Serving** (`src/serve.py`): FastAPI `/predict` (image upload → class
+   + confidence + full probability vector), lazy model load.
+6. **Container**: release-pinned `.keras` artifact, SHA256-verified,
+   parity-checked against local serving.
+
+## Results (held-out test, 4,050 patches)
+
+- **Accuracy 0.9123**, loss 0.2642.
+- Strongest: Forest (F1 0.948), AnnualCrop (0.934).
+- Weakest: HerbaceousVegetation (F1 0.843 — confused with Pasture and
+  AnnualCrop), Industrial recall 0.856.
+
+## Limitations
+
+1. **RGB only** — multispectral bands unused; crop/pasture/vegetation
+   confusion is the error mass.
+2. **Single dataset, single sensor mix** — no cross-sensor or
+   multi-region validation.
+3. **No calibration** — softmax scores rank, they don't quantify uncertainty.
+4. **64×64 tiles** — no landscape context beyond the patch.
+5. **Small test set** (4,050) for a 10-class problem; rare confusions are noisy.
+
+## Ethical Considerations
+
+EO mapping supports land administration and environmental monitoring, but
+misclassification at scale could misinform land-use decisions affecting
+livelihoods. Demo only — operational use needs multispectral inputs,
+multi-region validation, and human review.
+
+## Run Instructions
+
+```bash
+make install-dev              # serving deps + pytest/ruff/httpx
+make test lint                # 10 tests, ruff clean
+bash scripts/download_data.sh # fetch + unpack EuroSAT RGB (~90 MB)
+make install-train && make train  # retrain (CPU, ~1-2h); saves models/eurosat_cnn_best.keras
+make serve                    # API on :8000
+curl -X POST http://localhost:8000/predict -F "file=@patch.png"
+```
+
+Docker (prebuilt, release-pinned artifact inside):
+
+```bash
+docker pull bakr1m/eurosat-api:latest
+docker run -p 8000:8000 bakr1m/eurosat-api:latest
+```
+
+## Provenance
+
+Refactored from the author's final-thesis notebook (preserved under
+`notebooks/01_eurosat_cnn_thesis.ipynb`): same architecture, same split
+seed, same training protocol. Colab/Drive-specific cells were removed;
+everything reproducible runs from `src/` + `make`.
